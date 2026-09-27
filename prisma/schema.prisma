@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id           Int      @id @default(autoincrement()) @map("id") @db.UnsignedInt
+  email        String   @unique @db.VarChar(191)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  name         String   @db.VarChar(100)
+  role         Role     @default(CUSTOMER)
+  orders       Order[]
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Product {
+  id          Int           @id @default(autoincrement())
+  name        String        @db.VarChar(191)
+  description String?       @db.Text
+  price       Int           @db.UnsignedInt
+  stock       Int           @default(0) @db.UnsignedInt
+  sales       Int           @default(0) @db.UnsignedInt
+  status      ProductStatus @default(DRAFT)
+  orderItems  OrderItem[]
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, sales(sort: Desc)], map: "idx_products_status_sales")
+  @@map("products")
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  orderNo     String      @unique @map("order_no") @db.VarChar(32)
+  userId      Int         @map("user_id") @db.UnsignedInt
+  user        User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status      OrderStatus @default(PENDING)
+  totalAmount Int         @map("total_amount") @db.UnsignedInt
+  items       OrderItem[]
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt(sort: Desc)], map: "idx_orders_user_created")
+  @@map("orders")
+}
+
+model OrderItem {
+  id          Int     @id @default(autoincrement())
+  orderId     Int     @map("order_id")
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   Int     @map("product_id")
+  product     Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productName String  @map("product_name") @db.VarChar(191)
+  unitPrice   Int     @map("unit_price") @db.UnsignedInt
+  quantity    Int     @db.UnsignedInt
+  subtotal    Int     @db.UnsignedInt
+
+  @@index([orderId], map: "idx_order_items_order")
+  @@map("order_items")
+}

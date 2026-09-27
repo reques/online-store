@@ -1,0 +1,1 @@
+<template><div class="container page-wrap empty-state"><p class="eyebrow">404 · LOST IN SELECTION</p><h1 class="page-title">这一页走丢了</h1><p>没关系，好东西还在首页等你。</p><RouterLink class="primary-btn" to="/">返回首页</RouterLink></div></template>
